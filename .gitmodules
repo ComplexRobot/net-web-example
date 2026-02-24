@@ -1,0 +1,4 @@
+[submodule "godot"]
+	path = godot
+	url = https://github.com/ComplexRobot/godot
+	branch = dotnet/mono-static-linking
