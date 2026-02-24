@@ -1,14 +1,14 @@
-<Project Sdk="Godot.NET.Sdk/4.5.0">
+<Project Sdk="Godot.NET.Sdk/4.6.1">
     <PropertyGroup>
         <TargetFramework>net9.0</TargetFramework>
         <EnableDynamicLoading>true</EnableDynamicLoading>
         <StartAction>Program</StartAction>
-        <StartProgram>C:/Users/kstgrd/AppData/Local/Microsoft/WinGet/Packages/GodotEngine.GodotEngine.Mono_Microsoft.Winget.Source_8wekyb3d8bbwe/Godot_v4.5-stable_mono_win64/Godot_v4.5-stable_mono_win64.exe</StartProgram>
+        <StartProgram>D:\Documents\Godot\Godot_v4\GodotSharp_v4.exe</StartProgram>
         <!--    <StartArguments>optional</StartArguments>-->
         <StartWorkingDirectory>./</StartWorkingDirectory>
     </PropertyGroup>
     <ItemGroup>
-        <TrimmerRootAssembly Include="System.Private.CoreLib"/>
-        <TrimmerRootAssembly Include="System.Runtime"/>
+        <TrimmerRootAssembly Include="System.Private.CoreLib" />
+        <TrimmerRootAssembly Include="System.Runtime" />
     </ItemGroup>
 </Project>

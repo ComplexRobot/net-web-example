@@ -1,0 +1,28 @@
+# .NET build outputs
+bin/
+obj/
+*.dll
+*.exe
+*.pdb
+
+# User-specific files
+*.user
+*.suo
+*.userprefs
+.vs/
+.vscode/
+.idea/
+/build/
+
+# Godot-specific ignores
+.godot/
+.import/
+export_presets.cfg
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# NuGet packages
+*.nupkg
+packages/
