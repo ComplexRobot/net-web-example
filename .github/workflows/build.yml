@@ -175,6 +175,7 @@ jobs:
           mv godot/bin/nuget $filename
           mv godot/bin/godot.web.template_release.wasm32.mono.zip ${filename}/web_release.zip
           mv godot/bin/godot.web.template_debug.wasm32.mono.zip ${filename}/web_debug.zip
+          mv global.json $filename
           mv README.md $filename
 
           # Save the output for use in other steps
@@ -214,6 +215,15 @@ jobs:
           rd "%~dp0nuget"
 
           echo:
+          echo Attempting to install wasm-tools...
+
+          mv "%~dp0global.json" "%~dp0global.json.disabled"
+          dotnet workload install wasm-tools
+
+          mv "%~dp0global.json.disabled" "%~dp0global.json"
+          dotnet workload install wasm-tools
+
+          echo:
           echo Installation complete!
           echo Use the included '${{ steps.prepare.outputs.filename }}.exe' to open your project and export for the web.
 
@@ -238,6 +248,8 @@ jobs:
             Requires copying the included `web_release.zip` and `web_debug.zip` files to
             `%AppData%\Godot\export_templates\${{ steps.prepare.outputs.version }}.${{ steps.prepare.outputs.status }}.mono`
             as well as the included `nuget` folder to `%AppData%\NuGet\nuget`.
+
+            Also requires having the .NET workload `wasm-tools` installed.
 
             The included `install.bat` does this automatically.
 
