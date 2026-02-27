@@ -1,0 +1,240 @@
+name: Build
+
+on: workflow_dispatch
+
+env:
+  BUILD_NAME: web_export
+
+jobs:
+  build-windows-editor:
+    runs-on: windows-latest
+
+    defaults:
+      run:
+        shell: pwsh
+
+    env:
+      SCONS_FLAGS: >-
+        ccflags="/O2 /Ob3 /GL /sdl- /GS- /arch:SSE4.2 /MP /DNDEBUG"
+        linkflags="/LTCG /OPT:REF /OPT:ICF"
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.ref }}
+          submodules: recursive
+
+      - name: Set Up Python
+        uses: actions/setup-python@v6
+
+      - name: Set Up SCons
+        run: pip install scons
+
+      - name: Set Up Direct3D 12 SDK
+        run: python godot\misc\scripts\install_d3d12_sdk_windows.py
+
+      - name: Build Editor (Windows)
+        run: scons -C godot target=editor module_mono_enabled=yes ${{ env.SCONS_FLAGS }}
+
+      - name: Generate Mono Glue
+        run: |
+          # Save a copy of the mono glue to the bin folder for later
+          cmd /c "godot\bin\godot.windows.editor.x86_64.mono --headless --quit --generate-mono-glue godot\bin\glue"
+          Copy-Item -Path godot\bin\glue\* -Destination godot\modules\mono\glue -Recurse -Force
+
+      - name: Build Mono Assemblies
+        run: python godot\modules\mono\build_scripts\build_assemblies.py --godot-output-dir=godot\bin --push-nupkgs-local godot\bin\nuget
+
+      - name: Save Version Text File
+        run: |
+          cmd /c "godot\bin\godot.windows.editor.x86_64.mono --headless --quit --version > godot\bin\version.txt"
+          type godot\bin\version.txt
+
+      - name: Set Short Commit Hash
+        id: short-hash
+        shell: bash
+        run: echo "sha=${GITHUB_SHA::9}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: godot.windows.x86_64.mono.${{ env.BUILD_NAME }}.${{ steps.short-hash.outputs.sha }}
+          path: |
+            godot\bin\*.exe
+            godot\bin\version.txt
+            godot\bin\GodotSharp\**
+            godot\bin\nuget\**
+            godot\bin\glue\**
+          retention-days: 90
+          overwrite: true
+
+  
+  # Must build export templates on Linux due to the "command line too long" error on windows.
+  build-export-templates:
+    runs-on: ubuntu-latest
+
+    needs: build-windows-editor
+
+    env:
+      SCONS_FLAGS: >-
+        optimize=speed
+        lto=full
+        ccflags="-DNDEBUG"
+        linkflags="-sMALLOC=mimalloc"
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.ref }}
+          submodules: recursive
+
+      - name: Set Up Python
+        uses: actions/setup-python@v6
+
+      - name: Set Up SCons
+        run: |
+          sudo apt-get update
+          sudo apt-get install scons -y
+
+      - name: Set Up Emscripten SDK
+        uses: mymindstorm/setup-emsdk@v14
+
+      - name: Set Short Commit Hash
+        id: short-hash
+        run: echo "sha=${GITHUB_SHA::9}" >> "$GITHUB_OUTPUT"
+
+      - name: Download Artifacts From Editor Build
+        uses: actions/download-artifact@v8
+        with:
+          name: godot.windows.x86_64.mono.${{ env.BUILD_NAME }}.${{ steps.short-hash.outputs.sha }}
+          path: godot/bin
+
+      - name: Copy Mono Glue
+        run: cp -rf godot/bin/glue/* godot/modules/mono/glue/
+
+      - name: Build Release Template (WASM)
+        run: scons -C godot platform=web target=template_release module_mono_enabled=yes ${{ env.SCONS_FLAGS }}
+
+      - name: Build Debug Template (WASM)
+        run: scons -C godot platform=web target=template_debug module_mono_enabled=yes ${{ env.SCONS_FLAGS }}
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: godot.web.template.wasm32.mono.${{ env.BUILD_NAME }}.${{ steps.short-hash.outputs.sha }}
+          path: |
+            godot/bin/*.zip
+            godot/bin/version.txt
+          retention-days: 90
+          overwrite: true
+
+      - name: Prepare Files
+        id: prepare
+        run: |
+          # Get the version data from the app (previously saved to a file)
+          # Remove the trailing newline
+          version_output=$(tr -d '\r\n' < godot/bin/version.txt)
+
+          # Regex matching: split the initial numerical/dot characters
+          [[ $version_output =~ ^([0-9.]+)\.([^0.9.].+?)\.(mono\.)?([^0.9.].+) ]]
+          version=${BASH_REMATCH[1]}
+          status=${BASH_REMATCH[2]}
+          mono=${BASH_REMATCH[3]}
+          build_name=${BASH_REMATCH[4]}
+
+          # Get a filename matching official Godot releases, e.g.: Godot_v4.6.1-stable_mono_web_export_b94985982_win64
+          filename=Godot_v${version}-${status}_${mono//./_}${build_name//./_}_win64
+
+          # Move the files to a folder
+          mkdir $filename
+          mv godot/bin/godot.windows.editor.x86_64.mono.exe ${filename}/${filename}.exe
+          mv godot/bin/godot.windows.editor.x86_64.mono.console.exe ${filename}/${filename}_console.exe
+          mv godot/bin/GodotSharp $filename
+          mv godot/bin/nuget $filename
+          mv godot/bin/godot.web.template_release.wasm32.mono.zip ${filename}/web_release.zip
+          mv godot/bin/godot.web.template_debug.wasm32.mono.zip ${filename}/web_debug.zip
+          mv README.md $filename
+
+          # Save the output for use in other steps
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "status=${status}" >> "$GITHUB_OUTPUT"
+          echo "build_name=${build_name}" >> "$GITHUB_OUTPUT"
+          echo "filename=${filename}" >> "$GITHUB_OUTPUT"
+
+      - name: Create Install Batch File
+        run: |
+          batch_filename=${{ steps.prepare.outputs.filename }}/install.bat
+          cat > $batch_filename << 'EOF'
+          @echo off
+
+          echo Installing web export files for '${{ steps.prepare.outputs.filename }}'...
+          echo:
+
+          set TEMPLATE_FOLDER=%AppData%\Godot\export_templates\${{ steps.prepare.outputs.version }}.${{ steps.prepare.outputs.status }}.mono
+          set NUGET_FOLDER=%AppData%\NuGet\nuget
+
+          echo Moving export templates to '%TEMPLATE_FOLDER%'...
+
+          md "%TEMPLATE_FOLDER%"
+          move /y "%~dp0web_release.zip" "%TEMPLATE_FOLDER%"
+          move /y "%~dp0web_debug.zip" "%TEMPLATE_FOLDER%"
+
+          echo:
+          echo Attempting to add NuGet source...
+
+          dotnet nuget add source "%NUGET_FOLDER%" --name NugetSource
+
+          echo:
+          echo Moving NuGet packages to '%NUGET_FOLDER%'...
+
+          md "%NUGET_FOLDER%"
+          move /y "%~dp0nuget\*" "%NUGET_FOLDER%"
+          rd "%~dp0nuget"
+
+          echo:
+          echo Installation complete!
+          echo Use the included '${{ steps.prepare.outputs.filename }}.exe' to open your project and export for the web.
+
+          pause
+          EOF
+
+      - name: Create Zip File
+        run: 7z a ${{ steps.prepare.outputs.filename }}.zip ${{ steps.prepare.outputs.filename }} -r -mm=Deflate64 -mx=9 -bt
+
+      - name: Upload Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ steps.prepare.outputs.filename }}.zip
+          tag_name: ${{ steps.prepare.outputs.version }}-${{ steps.prepare.outputs.status }}
+          target_commitish: ${{ github.ref }}
+          body: >-
+            Windows build of [Godot Engine](https://godotengine.org/)
+            ${{ steps.prepare.outputs.version }}-${{ steps.prepare.outputs.status }}
+            with experimental support for exporting C# projects to the web.
+
+
+            Requires copying the included `web_release.zip` and `web_debug.zip` files to
+            `%AppData%\Godot\export_templates\${{ steps.prepare.outputs.version }}.${{ steps.prepare.outputs.status }}.mono`
+            as well as the included `nuget` folder to `%AppData%\NuGet\nuget`.
+
+            The included `install.bat` does this automatically.
+
+
+            Simplest usage:
+
+            - Extract the zip file.
+
+            - Run the included `install.bat`.
+
+            - Open your project with the included app to export to the web.
+
+
+             > [!WARNING]
+
+             > Games exported for the web do not support all features.
+
+             >
+
+             > See the main README for more information.
