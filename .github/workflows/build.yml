@@ -64,9 +64,16 @@ jobs:
     needs: build-windows-editor
 
     env:
-      SCONS_FLAGS: >-
+      SCONS_FLAGS_RELEASE: >-
         optimize=speed
         lto=full
+        ccflags="-DNDEBUG"
+        linkflags="-sMALLOC=mimalloc"
+
+      # Different build settings due to memory limitations of the standard github runner
+      SCONS_FLAGS_DEBUG: >-
+        optimize=speed
+        lto=thin
         ccflags="-DNDEBUG"
         linkflags="-sMALLOC=mimalloc"
 
@@ -112,10 +119,10 @@ jobs:
         run: python godot/modules/mono/build_scripts/build_assemblies.py --godot-output-dir=godot/bin --push-nupkgs-local godot/bin/nuget
 
       - name: Build Web Template (Release)
-        run: scons -C godot platform=web target=template_release module_mono_enabled=yes ${{ env.SCONS_FLAGS }}
+        run: scons -C godot platform=web target=template_release module_mono_enabled=yes ${{ env.SCONS_FLAGS_RELEASE }}
 
       - name: Build Web Template (Debug)
-        run: scons -C godot platform=web target=template_debug module_mono_enabled=yes ${{ env.SCONS_FLAGS }}
+        run: scons -C godot platform=web target=template_debug module_mono_enabled=yes ${{ env.SCONS_FLAGS_DEBUG }}
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v7
