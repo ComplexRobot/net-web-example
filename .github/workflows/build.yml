@@ -111,7 +111,13 @@ jobs:
           global-json-file: global.json
 
       - name: Set Up WASM Tools
-        run: dotnet workload install wasm-tools
+        run: |
+          # Install wasm-tools for both 10.0 and 9.0 SDKs
+          mv global.json global.json.disabled
+          dotnet workload install wasm-tools
+
+          mv global.json.disabled global.json
+          dotnet workload install wasm-tools
 
       - name: Set Up SCons
         run: |
