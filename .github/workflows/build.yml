@@ -247,10 +247,8 @@ jobs:
             - Open your project with the included app to export to the web.
 
 
-             > [!WARNING]
+            **⚠️WARNING⚠️
 
-             > Games exported for the web do not support all features.
+            Games exported for the web do not support all features.
 
-             >
-
-             > See the main README for more information.
+            See the main README for more information.**
