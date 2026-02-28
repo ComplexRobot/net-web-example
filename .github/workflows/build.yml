@@ -97,11 +97,6 @@ jobs:
         with:
           python-version: 3.x
 
-      - name: Set Up .NET
-        uses: actions/setup-dotnet@v5
-        with:
-          global-json-file: global.json
-
       - name: Set Up WASM Tools
         run: |
           # Install wasm-tools for both 10.0 and 9.0 SDKs
