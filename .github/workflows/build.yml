@@ -53,23 +53,16 @@ jobs:
           cmd /c "godot\bin\godot.windows.editor.x86_64.mono --headless --quit --version > godot\bin\version.txt"
           type godot\bin\version.txt
 
-      - name: Set Short Commit Hash
-        id: short-hash
-        shell: bash
-        run: echo "sha=${GITHUB_SHA::9}" >> "$GITHUB_OUTPUT"
-
       - name: Upload Artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: godot.windows.x86_64.mono.${{ env.BUILD_NAME }}.${{ steps.short-hash.outputs.sha }}
+          name: godot.windows.x86_64.mono.${{ env.BUILD_NAME }}
           path: |
             godot\bin\*.exe
             godot\bin\version.txt
             godot\bin\GodotSharp\**
             godot\bin\nuget\**
             godot\bin\glue\**
-          retention-days: 90
-          overwrite: true
 
   
   # Must build export templates on Linux due to the "command line too long" error on windows.
@@ -114,14 +107,10 @@ jobs:
       - name: Set Up Emscripten SDK
         uses: mymindstorm/setup-emsdk@v14
 
-      - name: Set Short Commit Hash
-        id: short-hash
-        run: echo "sha=${GITHUB_SHA::9}" >> "$GITHUB_OUTPUT"
-
       - name: Download Artifacts From Editor Build
         uses: actions/download-artifact@v8
         with:
-          name: godot.windows.x86_64.mono.${{ env.BUILD_NAME }}.${{ steps.short-hash.outputs.sha }}
+          name: godot.windows.x86_64.mono.${{ env.BUILD_NAME }}
           path: godot/bin
 
       - name: Copy Mono Glue
@@ -136,12 +125,10 @@ jobs:
       - name: Upload Artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: godot.web.template.wasm32.mono.${{ env.BUILD_NAME }}.${{ steps.short-hash.outputs.sha }}
+          name: godot.web.template.wasm32.mono.${{ env.BUILD_NAME }}
           path: |
             godot/bin/*.zip
             godot/bin/version.txt
-          retention-days: 90
-          overwrite: true
 
       - name: Prepare Files
         id: prepare
