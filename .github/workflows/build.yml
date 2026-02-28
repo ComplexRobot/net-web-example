@@ -9,10 +9,6 @@ jobs:
   build-windows-editor:
     runs-on: windows-latest
 
-    defaults:
-      run:
-        shell: pwsh
-
     env:
       SCONS_FLAGS: >-
         ccflags="/O2 /Ob3 /GL /sdl- /GS- /arch:SSE4.2 /MP /DNDEBUG"
