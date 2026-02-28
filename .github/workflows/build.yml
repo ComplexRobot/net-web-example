@@ -111,10 +111,10 @@ jobs:
       - name: Build Mono Assemblies
         run: python godot/modules/mono/build_scripts/build_assemblies.py --godot-output-dir=godot/bin --push-nupkgs-local godot/bin/nuget
 
-      - name: Build Release Template (WASM)
+      - name: Build Web Template (Release)
         run: scons -C godot platform=web target=template_release module_mono_enabled=yes ${{ env.SCONS_FLAGS }}
 
-      - name: Build Debug Template (WASM)
+      - name: Build Web Template (Debug)
         run: scons -C godot platform=web target=template_debug module_mono_enabled=yes ${{ env.SCONS_FLAGS }}
 
       - name: Upload Artifacts
