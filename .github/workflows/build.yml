@@ -215,7 +215,7 @@ jobs:
           EOF
 
       - name: Create Zip File
-        run: 7z a ${{ steps.prepare.outputs.filename }}.zip ${{ steps.prepare.outputs.filename }} -r -mm=Deflate64 -mx=9 -bt
+        run: 7z a ${{ steps.prepare.outputs.filename }}.zip ${{ steps.prepare.outputs.filename }} -r -mm=Deflate64 -mx=9 -bb
 
       - name: Upload Release
         uses: softprops/action-gh-release@v2
