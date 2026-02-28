@@ -42,8 +42,8 @@ Optionally, you can use a `global.json` (sample file included) to control the .N
 
 In addition to their changes, I've added a change to how export templates are generated based upon the fix in xr0gu3's docker build.
 
-This changes the `js` file in the template directly so that you can export directly from the editor with no post-export changes needed.
+This changes the `js` file in the template so that you can export directly from the editor with no post-export changes needed.
 
 Custom build of godot here: [ComplexRobot/godot/dotnet/mono-static-linking](https://github.com/ComplexRobot/godot/tree/dotnet/mono-static-linking)
 
-It's based upon the latest stable version of godot with the PR by raulsntos merged in. (Plus a small change added by xr0gu3.)
+It is the latest stable version of godot with the PR by raulsntos merged in. (Plus a small change added by xr0gu3.)
