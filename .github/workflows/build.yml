@@ -217,10 +217,10 @@ jobs:
           echo:
           echo Attempting to install wasm-tools...
 
-          mv "%~dp0global.json" "%~dp0global.json.disabled"
+          ren "%~dp0global.json" global.json.disabled
           dotnet workload install wasm-tools
 
-          mv "%~dp0global.json.disabled" "%~dp0global.json"
+          ren "%~dp0global.json.disabled" global.json
           dotnet workload install wasm-tools
 
           echo:
