@@ -40,13 +40,7 @@ jobs:
         run: scons -C godot target=editor module_mono_enabled=yes ${{ env.SCONS_FLAGS }}
 
       - name: Generate Mono Glue
-        run: |
-          # Save a copy of the mono glue to the bin folder for later
-          cmd /c "godot\bin\godot.windows.editor.x86_64.mono --headless --quit --generate-mono-glue godot\bin\glue"
-          Copy-Item -Path godot\bin\glue\* -Destination godot\modules\mono\glue -Recurse -Force
-
-      - name: Build Mono Assemblies
-        run: python godot\modules\mono\build_scripts\build_assemblies.py --godot-output-dir=godot\bin --push-nupkgs-local godot\bin\nuget
+        run: cmd /c "godot\bin\godot.windows.editor.x86_64.mono --headless --quit --generate-mono-glue godot\bin\glue"
 
       - name: Save Version Text File
         run: |
@@ -56,12 +50,10 @@ jobs:
       - name: Upload Artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: godot.windows.x86_64.mono.${{ env.BUILD_NAME }}
+          name: godot.windows.mono.${{ env.BUILD_NAME }}.artifact0
           path: |
             godot\bin\*.exe
             godot\bin\version.txt
-            godot\bin\GodotSharp\**
-            godot\bin\nuget\**
             godot\bin\glue\**
 
   
@@ -110,11 +102,14 @@ jobs:
       - name: Download Artifacts From Editor Build
         uses: actions/download-artifact@v8
         with:
-          name: godot.windows.x86_64.mono.${{ env.BUILD_NAME }}
+          name: godot.windows.mono.${{ env.BUILD_NAME }}.artifact0
           path: godot/bin
 
       - name: Copy Mono Glue
         run: cp -rf godot/bin/glue/* godot/modules/mono/glue/
+
+      - name: Build Mono Assemblies
+        run: python godot/modules/mono/build_scripts/build_assemblies.py --godot-output-dir=godot/bin --push-nupkgs-local godot/bin/nuget
 
       - name: Build Release Template (WASM)
         run: scons -C godot platform=web target=template_release module_mono_enabled=yes ${{ env.SCONS_FLAGS }}
@@ -125,10 +120,12 @@ jobs:
       - name: Upload Artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: godot.web.template.wasm32.mono.${{ env.BUILD_NAME }}
+          name: godot.windows.mono.${{ env.BUILD_NAME }}.artifact1
           path: |
             godot/bin/*.zip
             godot/bin/version.txt
+            godot/bin/GodotSharp/**
+            godot/bin/nuget/**
 
       - name: Prepare Files
         id: prepare
