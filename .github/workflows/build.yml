@@ -30,14 +30,6 @@ jobs:
         with:
           python-version: 3.x
 
-      - name: Set Up .NET
-        uses: actions/setup-dotnet@v5
-        with:
-          global-json-file: global.json
-
-      - name: Set Up WASM Tools
-        run: dotnet workload install wasm-tools
-
       - name: Set Up SCons
         run: pip install scons
 
