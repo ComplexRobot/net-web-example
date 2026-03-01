@@ -138,13 +138,14 @@ jobs:
           version_output=$(tr -d '\r\n' < godot/bin/version.txt)
 
           # Regex matching: split the initial numerical/dot characters
-          [[ $version_output =~ ^([0-9.]+)\.([^0-9.][^.]*)\.(mono\.)?(.+) ]]
+          [[ $version_output =~ ^([0-9.]+)\.([^0-9.][^.]*)\.(mono\.)?(.+)\.([^.]+) ]]
           version=${BASH_REMATCH[1]}
           status=${BASH_REMATCH[2]}
           mono=${BASH_REMATCH[3]}
           build_name=${BASH_REMATCH[4]}
+          hash=${BASH_REMATCH[5]}
 
-          # Get a filename matching official Godot releases, e.g.: Godot_v4.6.1-stable_mono_web_export_b94985982_win64
+          # Get a filename matching official Godot releases, e.g.: Godot_v4.6.1-stable_mono_web_export_win64
           filename=Godot_v${version}-${status}_${mono//./_}${build_name//./_}_win64
 
           # Move the files to a folder
@@ -162,6 +163,7 @@ jobs:
           echo "version=${version}" >> "$GITHUB_OUTPUT"
           echo "status=${status}" >> "$GITHUB_OUTPUT"
           echo "build_name=${build_name}" >> "$GITHUB_OUTPUT"
+          echo "hash=${hash}" >> "$GITHUB_OUTPUT"
           echo "filename=${filename}" >> "$GITHUB_OUTPUT"
 
       - name: Create Install Batch File
