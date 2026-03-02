@@ -17,9 +17,7 @@ More information is in the release notes.
 > From the [raulsntos PR](https://github.com/godotengine/godot/pull/106125):
 > * Globalization doesn't work, so for now we're always enabling
 [invariant mode](https://learn.microsoft.com/en-us/dotnet/core/runtime-config/globalization#invariant-mode).
-> * The Mono runtime uses stubs for their exported JavaScript functions, these need to be replaced with the real implementation
-in their `dotnet.runtime.js` module but we don't have an easy way to do that yet, which means some BCL APIs will not work
-(i.e.: crypto APIs)
+> * (...) some BCL APIs will not work (i.e.: crypto APIs)
 
 > [!TIP]
 > If you are uploading to [itch.io](https://itch.io/) - _[xr0gu3](https://github.com/xr0gu3/net-web-example)_:
