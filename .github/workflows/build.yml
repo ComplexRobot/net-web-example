@@ -46,28 +46,57 @@ jobs:
       - name: Upload Artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: godot.windows.mono.${{ env.BUILD_NAME }}.artifact0
+          name: godot.windows.mono.${{ env.BUILD_NAME }}.editor
           path: |
             godot\bin\*.exe
             godot\bin\version.txt
             godot\bin\glue\**
 
-  
+
   # Must build export templates on Linux due to the "command line too long" error on windows.
-  build-export-templates:
+  build-export-template-release:
     runs-on: ubuntu-latest
 
     needs: build-windows-editor
 
     env:
-      SCONS_FLAGS_RELEASE: >-
+      SCONS_FLAGS: >-
         optimize=speed
         lto=full
         ccflags="-DNDEBUG"
         linkflags="-sMALLOC=mimalloc"
 
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.ref }}
+          submodules: recursive
+
+      - name: Set Up Dependencies
+        uses: ./.github/actions/web-template-deps
+
+      - name: Build Web Template (Release)
+        run: scons -C godot platform=web target=template_release module_mono_enabled=yes ${{ env.SCONS_FLAGS }}
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: godot.windows.mono.${{ env.BUILD_NAME }}.template_release
+          path: |
+            godot/bin/godot.web.template_release.wasm32.mono.zip
+            godot/bin/GodotSharp/**
+            godot/bin/nuget/**
+
+
+  build-export-template-debug:
+    runs-on: ubuntu-latest
+
+    needs: build-windows-editor
+
+    env:
       # Different build settings due to memory limitations of the standard github runner
-      SCONS_FLAGS_DEBUG: >-
+      SCONS_FLAGS: >-
         optimize=speed
         lto=thin
         ccflags="-DNDEBUG"
@@ -80,55 +109,42 @@ jobs:
           ref: ${{ github.ref }}
           submodules: recursive
 
-      - name: Set Up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: 3.x
-
-      - name: Set Up WASM Tools
-        run: |
-          # Install wasm-tools for both 10.0 and 9.0 SDKs
-          mv global.json global.json.disabled
-          dotnet workload install wasm-tools
-
-          mv global.json.disabled global.json
-          dotnet workload install wasm-tools
-
-      - name: Set Up SCons
-        run: |
-          sudo apt-get update
-          sudo apt-get install scons -y
-
-      - name: Set Up Emscripten SDK
-        uses: mymindstorm/setup-emsdk@v14
-
-      - name: Download Artifacts From Editor Build
-        uses: actions/download-artifact@v8
-        with:
-          name: godot.windows.mono.${{ env.BUILD_NAME }}.artifact0
-          path: godot/bin
-
-      - name: Copy Mono Glue
-        run: cp -rf godot/bin/glue/* godot/modules/mono/glue/
-
-      - name: Build Mono Assemblies
-        run: python godot/modules/mono/build_scripts/build_assemblies.py --godot-output-dir=godot/bin --push-nupkgs-local godot/bin/nuget
-
-      - name: Build Web Template (Release)
-        run: scons -C godot platform=web target=template_release module_mono_enabled=yes ${{ env.SCONS_FLAGS_RELEASE }}
+      - name: Set Up Dependencies
+        uses: ./.github/actions/web-template-deps
 
       - name: Build Web Template (Debug)
-        run: scons -C godot platform=web target=template_debug module_mono_enabled=yes ${{ env.SCONS_FLAGS_DEBUG }}
+        run: scons -C godot platform=web target=template_debug module_mono_enabled=yes ${{ env.SCONS_FLAGS }}
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: godot.windows.mono.${{ env.BUILD_NAME }}.artifact1
-          path: |
-            godot/bin/*.zip
-            godot/bin/version.txt
-            godot/bin/GodotSharp/**
-            godot/bin/nuget/**
+          name: godot.windows.mono.${{ env.BUILD_NAME }}.template_debug
+          path: godot/bin/godot.web.template_debug.wasm32.mono.zip
+
+
+  build-final-zip:
+    runs-on: ubuntu-latest
+
+    needs: [build-export-template-release, build-export-template-debug]
+
+    outputs:
+      version: ${{ steps.prepare.outputs.version }}
+      status: ${{ steps.prepare.outputs.status }}
+      build_name: ${{ steps.prepare.outputs.build_name }}
+      hash: ${{ steps.prepare.outputs.hash }}
+      filename: ${{ steps.prepare.outputs.filename }}
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Download Artifacts
+        uses: actions/download-artifact@v8
+        with:
+          path: godot/bin
+          merge-multiple: true
 
       - name: Prepare Files
         id: prepare
@@ -216,15 +232,33 @@ jobs:
       - name: Create Zip File
         run: 7z a ${{ steps.prepare.outputs.filename }}.zip ${{ steps.prepare.outputs.filename }} -r -mm=Deflate64 -mx=9 -bb
 
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.prepare.outputs.filename }}.artifact
+          path: ${{ steps.prepare.outputs.filename }}.zip
+
+
+  upload-release:
+    runs-on: ubuntu-latest
+
+    needs: build-final-zip
+
+    steps:
+      - name: Download Artifact Zip File
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ needs.build-final-zip.outputs.filename }}.artifact
+
       - name: Upload Release
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ steps.prepare.outputs.filename }}.zip
-          tag_name: ${{ steps.prepare.outputs.version }}-${{ steps.prepare.outputs.status }}
+          files: ${{ needs.build-final-zip.outputs.filename }}.zip
+          tag_name: ${{ needs.build-final-zip.outputs.version }}-${{ needs.build-final-zip.outputs.status }}
           target_commitish: ${{ github.ref }}
           body: >-
             Windows build of [Godot Engine](https://godotengine.org/)
-            ${{ steps.prepare.outputs.version }}-${{ steps.prepare.outputs.status }}
+            ${{ needs.build-final-zip.outputs.version }}-${{ needs.build-final-zip.outputs.status }}
             with experimental support for exporting C# projects to the web.
 
 
@@ -241,7 +275,7 @@ jobs:
             5. Open your project with the included app to export to the web.
 
             > <sub>If you are using self-contained mode, copy the web export templates to
-            `editor_data\export_templates\${{ steps.prepare.outputs.version }}.${{ steps.prepare.outputs.status }}.mono`.</sub>
+            `editor_data\export_templates\${{ needs.build-final-zip.outputs.version }}.${{ needs.build-final-zip.outputs.status }}.mono`.</sub>
 
 
             **⚠️WARNING

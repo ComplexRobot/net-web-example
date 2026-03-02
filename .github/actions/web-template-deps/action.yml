@@ -1,0 +1,44 @@
+name: Set Up Web Export Template Dependencies
+description: Sets up dependencies for the web export templates.
+
+runs:
+  using: composite
+
+  steps:
+    - name: Set Up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: 3.x
+
+    - name: Set Up WASM Tools
+      shell: bash
+      run: |
+        # Install wasm-tools for both 10.0 and 9.0 SDKs
+        mv global.json global.json.disabled
+        dotnet workload install wasm-tools
+
+        mv global.json.disabled global.json
+        dotnet workload install wasm-tools
+
+    - name: Set Up SCons
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install scons -y
+
+    - name: Set Up Emscripten SDK
+      uses: mymindstorm/setup-emsdk@v14
+
+    - name: Download Artifacts From Editor Build
+      uses: actions/download-artifact@v8
+      with:
+        name: godot.windows.mono.${{ env.BUILD_NAME }}.editor
+        path: godot/bin
+
+    - name: Copy Mono Glue
+      shell: bash
+      run: cp -rf godot/bin/glue/* godot/modules/mono/glue
+
+    - name: Build Mono Assemblies
+      shell: bash
+      run: python godot/modules/mono/build_scripts/build_assemblies.py --godot-output-dir=godot/bin --push-nupkgs-local godot/bin/nuget
