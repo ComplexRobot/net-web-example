@@ -156,6 +156,7 @@ jobs:
           mv godot/bin/nuget $filename
           mv godot/bin/godot.web.template_release.wasm32.mono.zip ${filename}/web_release.zip
           mv godot/bin/godot.web.template_debug.wasm32.mono.zip ${filename}/web_debug.zip
+          mv Program.cs $filename
           mv global.json $filename
           mv README.md $filename
 
