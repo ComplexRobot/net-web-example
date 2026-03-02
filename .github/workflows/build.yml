@@ -133,7 +133,7 @@ jobs:
       build_name: ${{ steps.prepare.outputs.build_name }}
       hash: ${{ steps.prepare.outputs.hash }}
       filename: ${{ steps.prepare.outputs.filename }}
-    
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v6
