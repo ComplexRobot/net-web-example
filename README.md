@@ -2,7 +2,7 @@
 
 Simple project which enables experimental web export support for C# projects on Windows.
 
-Visit the [Releases](https://github.com/ComplexRobot/net-web-example/releases) for a pre-built binary for windows.
+Visit the [Releases](https://github.com/ComplexRobot/godot-dotnet-web-export/releases) for a pre-built binary for Windows.
 
 More information is in the release notes.
 
