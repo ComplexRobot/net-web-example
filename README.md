@@ -6,19 +6,53 @@ Visit the [Releases](https://github.com/ComplexRobot/net-web-example/releases) f
 
 More information is in the release notes.
 
+
 ### Important Information
 
 > [!WARNING]
 > Games exported for the web lack support for some features.
 >
-> Does not support GDExtensions due to the dotnet runtime being built without position-independent code.
+> Does not support GDExtensions due to the .NET runtime being built without position-independent code.
 >
-> From the raulsntos PR:
-> * Globalization doesn't work, so for now we're always enabling [invariant mode](https://learn.microsoft.com/en-us/dotnet/core/runtime-config/globalization#invariant-mode).
-> * The Mono runtime uses stubs for their exported JavaScript functions, these need to be replaced with the real implementation in their `dotnet.runtime.js` module but we don't have an easy way to do that yet, which means some BCL APIs will not work (i.e.: crypto APIs)
+> From the [raulsntos PR](https://github.com/godotengine/godot/pull/106125):
+> * Globalization doesn't work, so for now we're always enabling
+[invariant mode](https://learn.microsoft.com/en-us/dotnet/core/runtime-config/globalization#invariant-mode).
+> * The Mono runtime uses stubs for their exported JavaScript functions, these need to be replaced with the real implementation
+in their `dotnet.runtime.js` module but we don't have an easy way to do that yet, which means some BCL APIs will not work
+(i.e.: crypto APIs)
 
-xr0gu3 notes this about uploading to itch.io:
-> (don't forget to enable **SharedArrayBuffer support** on itch project dashboard).
+> [!TIP]
+> If you are uploading to [itch.io](https://itch.io/) - _[xr0gu3](https://github.com/xr0gu3/net-web-example)_:
+> > (don't forget to enable **SharedArrayBuffer support** on itch project dashboard).
+
+
+### Requirements
+
+- The `.csproj` `TargetFramework` must be `net9.0`, i.e., `<TargetFramework>net9.0</TargetFramework>`.
+  - You will need the .NET 9.0 SDK installed.
+
+- Your project must include a `Program.cs` containing at least one top-level statement.
+  - The simplest is a `Program.cs` simply containing `{}`. (Sample file included.)
+
+- Done automatically by the included `install.bat`:
+  - Copy the included `web_release.zip` and `web_debug.zip` files to
+`%AppData%\Godot\export_templates\<version>.<status>.mono` as well as the included `nuget` folder to `%AppData%\NuGet\nuget`
+(or a valid NuGet source).
+  - The .NET workload `wasm-tools` must be installed.
+
+> [!TIP]
+> If you are using self-contained mode, you will need to copy the web export templates to the
+`editor_data\export_templates\<version>.<status>.mono` folder.
+
+> [!NOTE]
+> You may need to add these lines to your `.csproj` (before the `</Project>`):
+> ```xml
+> <ItemGroup>
+>   <TrimmerRootAssembly Include="System.Private.CoreLib" />
+>   <TrimmerRootAssembly Include="System.Runtime" />
+> </ItemGroup>
+> 
+> ```
 
 
 ### WASM Tools Installation
@@ -27,9 +61,9 @@ Exporting for the web requires the .NET workload `wasm-tools` to be installed.
 
 The included `install.bat` will attempt to install `wasm-tools` for your highest installed .NET SDK as well as .NET 9.0.
 
-If you are getting export errors, use the command line `dotnet workload install wasm-tools` to install the workload.
+This is installed via the command line `dotnet workload install wasm-tools`.
 
-Optionally, you can use a `global.json` (sample file included) to control the .NET SDK version used directly.
+You can use a `global.json` (sample file included) to control the .NET SDK version used.
 
 
 ### Credit

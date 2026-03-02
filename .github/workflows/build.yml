@@ -227,25 +227,23 @@ jobs:
             with experimental support for exporting C# projects to the web.
 
 
-            Requires copying the included `web_release.zip` and `web_debug.zip` files to
-            `%AppData%\Godot\export_templates\${{ steps.prepare.outputs.version }}.${{ steps.prepare.outputs.status }}.mono`
-            as well as the included `nuget` folder to `%AppData%\NuGet\nuget`.
+            How to use:
 
-            Also requires having the .NET workload `wasm-tools` installed.
+            1. Extract the zip file.
 
-            The included `install.bat` does this automatically.
+            2. Run the included `install.bat`.
 
+            3. Change your Godot project's `.csproj` `TargetFramework` to `net9.0`, i.e., `<TargetFramework>net9.0</TargetFramework>`.
 
-            Simplest usage:
+            4. Copy the included `Program.cs` to your project root if it doesn't have one.
 
-            - Extract the zip file.
+            5. Open your project with the included app to export to the web.
 
-            - Run the included `install.bat`.
-
-            - Open your project with the included app to export to the web.
+            > <sub>If you are using self-contained mode, copy the web export templates to
+            `editor_data\export_templates\${{ steps.prepare.outputs.version }}.${{ steps.prepare.outputs.status }}.mono`.</sub>
 
 
-            **⚠️WARNING⚠️
+            **⚠️WARNING
 
             Games exported for the web do not support all features.
 
