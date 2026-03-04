@@ -256,6 +256,7 @@ jobs:
           files: ${{ needs.build-final-zip.outputs.filename }}.zip
           tag_name: ${{ needs.build-final-zip.outputs.version }}-${{ needs.build-final-zip.outputs.status }}
           target_commitish: ${{ github.ref }}
+          prerelease: ${{ needs.build-final-zip.outputs.status != 'stable' }}
           body: >-
             Windows build of [Godot Engine](https://godotengine.org/)
             ${{ needs.build-final-zip.outputs.version }}-${{ needs.build-final-zip.outputs.status }}
